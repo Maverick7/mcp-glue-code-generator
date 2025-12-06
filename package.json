@@ -1,7 +1,8 @@
 {
     "name": "mcp-glue-code-generator",
-    "version": "1.0.0",
-    "description": "MCP Server that generates Zod schemas to map API responses to Vue Design System components with live UI previews",
+    "version": "1.0.3",
+    "mcpName": "io.github.Maverick7/glue-code-generator",
+    "description": "MCP Server that generates Zod schemas to map API responses to Vue/React Design System components with live UI previews",
     "type": "module",
     "main": "build/index.js",
     "bin": {

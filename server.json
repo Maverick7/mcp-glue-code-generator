@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.Maverick7/glue-code-generator",
+  "description": "Maps API JSON to Vue/React components with Zod schemas and live UI previews",
+  "repository": {
+    "url": "https://github.com/Maverick7/mcp-glue-code-generator",
+    "source": "github"
+  },
+  "version": "1.0.3",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-glue-code-generator",
+      "version": "1.0.3",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
