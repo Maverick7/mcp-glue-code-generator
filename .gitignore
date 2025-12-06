@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Build output (keep for npm publish)
-# build/
+# MCP Publisher (don't commit tokens!)
+.mcpregistry_*
+mcp-publisher.exe
 
 # IDE
 .vscode/

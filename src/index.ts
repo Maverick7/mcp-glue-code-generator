@@ -1,111 +1,37 @@
 #!/usr/bin/env node
-import express from 'express';
-import cors from 'cors';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
-import { randomUUID } from 'crypto';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerGenerateUiSchemaTool } from './tools/generateUiSchema.js';
 
-const app = express();
-const port = process.env.PORT || 3000;
+// Check if we should run in HTTP mode (for testing) or stdio mode (for npx/VS Code)
+const useHttp = process.argv.includes('--http') || process.env.MCP_HTTP === 'true';
 
-// CORS configuration for VS Code and MCP clients
-app.use(cors({
-    origin: '*',
-    exposedHeaders: ['Mcp-Session-Id'],
-    allowedHeaders: ['Content-Type', 'mcp-session-id'],
-}));
-app.use(express.json());
-
-// Map to store transports by session ID
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
-
-// Health check endpoint
-app.get('/', (_req, res) => {
-    res.json({
-        name: 'MCP UI Glue Code Generator',
-        version: '1.0.0',
-        description: 'Maps messy API JSON to Vue Design System components using Zod schemas',
-        mcp_endpoint: '/mcp'
-    });
-});
-
-// Handle POST requests for client-to-server communication
-app.post('/mcp', async (req, res) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    let transport: StreamableHTTPServerTransport;
-
-    if (sessionId && transports[sessionId]) {
-        // Session exists - reuse transport
-        transport = transports[sessionId];
-    } else if (!sessionId && isInitializeRequest(req.body)) {
-        // New initialization request - create new transport
-        transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: () => randomUUID(),
-            onsessioninitialized: (sid) => {
-                transports[sid] = transport;
-                console.log(`✅ MCP Session initialized: ${sid}`);
-            },
-        });
-
-        // Clean up on session close
-        transport.onclose = () => {
-            if (transport.sessionId) {
-                console.log(`👋 MCP Session closed: ${transport.sessionId}`);
-                delete transports[transport.sessionId];
-            }
-        };
-
-        // Create new server instance for this session
+if (useHttp) {
+    // HTTP mode for testing with MCP Inspector
+    import('./httpServer.js');
+} else {
+    // Stdio mode for npx and VS Code integration
+    async function main() {
         const server = new McpServer({
             name: 'glue-code-generator',
-            version: '1.0.0',
+            version: '1.0.3',
         });
 
         // Register our core tool
         registerGenerateUiSchemaTool(server);
 
+        // Create stdio transport
+        const transport = new StdioServerTransport();
+
         // Connect server to transport
         await server.connect(transport);
 
-    } else {
-        return res.status(400).json({
-            error: { message: 'Bad Request: No valid session ID provided' },
-        });
+        // Log to stderr (so it doesn't interfere with stdio protocol)
+        console.error('🚀 MCP Glue Code Generator started (stdio mode)');
     }
 
-    // Handle the request
-    await transport.handleRequest(req, res, req.body);
-});
-
-// Handler for GET and DELETE requests
-const handleSessionRequest = async (req: express.Request, res: express.Response) => {
-    const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    if (!sessionId || !transports[sessionId]) {
-        return res.status(404).send('Session not found');
-    }
-    const transport = transports[sessionId];
-    await transport.handleRequest(req, res);
-};
-
-// GET handles server-to-client streaming
-app.get('/mcp', handleSessionRequest);
-
-// DELETE handles session termination
-app.delete('/mcp', handleSessionRequest);
-
-// Start server
-app.listen(port, () => {
-    console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║     🚀 MCP UI Glue Code Generator Server                     ║
-╠══════════════════════════════════════════════════════════════╣
-║  Server:    http://localhost:${port}                            ║
-║  MCP:       http://localhost:${port}/mcp                        ║
-║                                                              ║
-║  Tools:                                                      ║
-║    • generate_ui_schema - Map API JSON to Vue components     ║
-╚══════════════════════════════════════════════════════════════╝
-  `);
-});
+    main().catch((error) => {
+        console.error('Fatal error:', error);
+        process.exit(1);
+    });
+}
