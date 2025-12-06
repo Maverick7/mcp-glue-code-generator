@@ -1,0 +1,7 @@
+{
+    "cust_id": "USR-12345",
+    "tx_timestamp": "2025-12-06T10:30:00Z",
+    "stat_cd": "STATUS_OK",
+    "amt_val": 1250.50,
+    "desc_txt": "Monthly subscription payment"
+}

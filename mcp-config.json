@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "glue-code-generator": {
+            "command": "node",
+            "args": [
+                "d:/MCPUIPlugin/build/index.js"
+            ],
+            "env": {}
+        }
+    }
+}
