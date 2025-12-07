@@ -13,19 +13,16 @@ else {
     async function main() {
         const server = new McpServer({
             name: 'glue-code-generator',
-            version: '1.0.3',
+            version: '1.0.5',
         });
         // Register our core tool
         registerGenerateUiSchemaTool(server);
         // Create stdio transport
         const transport = new StdioServerTransport();
-        // Connect server to transport
+        // Connect server to transport - this starts the server
         await server.connect(transport);
-        // Log to stderr (so it doesn't interfere with stdio protocol)
-        console.error('🚀 MCP Glue Code Generator started (stdio mode)');
     }
-    main().catch((error) => {
-        console.error('Fatal error:', error);
+    main().catch(() => {
         process.exit(1);
     });
 }
