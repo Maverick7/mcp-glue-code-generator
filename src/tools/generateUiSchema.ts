@@ -1,6 +1,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createUIResource } from '@mcp-ui/server';
 import { z } from 'zod';
+import { writeFileSync, mkdirSync } from 'fs';
+import { dirname, resolve } from 'path';
 import { generateCardHtml } from '../templates/cardTemplate.js';
 import { generateZodSchema, analyzeApiJson, analyzeVueComponent } from '../utils/schemaGenerator.js';
 
@@ -8,14 +10,15 @@ import { generateZodSchema, analyzeApiJson, analyzeVueComponent } from '../utils
 const GenerateUiSchemaInputSchema = z.object({
     api_json_sample: z.string().describe('A sample JSON response from the backend API'),
     vue_component_code: z.string().describe('The Vue component code from the Design System'),
+    output_path: z.string().optional().describe('Optional path to save the HTML preview file (e.g., ./preview.html)'),
 });
 
 export function registerGenerateUiSchemaTool(server: McpServer) {
     server.tool(
         'generate_ui_schema',
-        'Maps messy API JSON to Vue Design System component props using Zod schema. Returns both the generated schema code and a live UI preview.',
+        'Maps messy API JSON to Vue/React Design System component props using Zod schema. Returns both the generated schema code and a live UI preview. Optionally saves preview as HTML file.',
         GenerateUiSchemaInputSchema.shape,
-        async ({ api_json_sample, vue_component_code }) => {
+        async ({ api_json_sample, vue_component_code, output_path }) => {
 
             try {
                 // 1. Parse and analyze inputs
@@ -32,7 +35,21 @@ export function registerGenerateUiSchemaTool(server: McpServer) {
                 // 4. Generate HTML preview
                 const previewHtml = generateCardHtml(mappedData);
 
-                // 5. Create UI Resource for live preview
+                // 5. Save HTML file if output_path is provided
+                let savedFilePath: string | null = null;
+                if (output_path) {
+                    try {
+                        const fullPath = resolve(output_path);
+                        mkdirSync(dirname(fullPath), { recursive: true });
+                        writeFileSync(fullPath, previewHtml, 'utf-8');
+                        savedFilePath = fullPath;
+                    } catch (fileError) {
+                        // Don't fail the whole operation if file save fails
+                        console.error('Failed to save preview file:', fileError);
+                    }
+                }
+
+                // 6. Create UI Resource for live preview
                 const uiPreview = await createUIResource({
                     uri: `ui://glue-code-generator/preview-${Date.now()}`,
                     content: {
@@ -42,12 +59,19 @@ export function registerGenerateUiSchemaTool(server: McpServer) {
                     encoding: 'text',
                 });
 
+                // Build response text
+                let responseText = `## Generated Zod Schema\n\n\`\`\`typescript\n${zodSchemaCode}\n\`\`\`\n\n## Mapped Data Preview\n\n\`\`\`json\n${JSON.stringify(mappedData, null, 2)}\n\`\`\``;
+
+                if (savedFilePath) {
+                    responseText += `\n\n## 📄 Preview Saved\n\nHTML preview saved to: \`${savedFilePath}\`\n\nOpen this file in a browser to see the rendered preview!`;
+                }
+
                 // Return text content with schema + embedded resource for UI preview
                 return {
                     content: [
                         {
                             type: 'text' as const,
-                            text: `## Generated Zod Schema\n\n\`\`\`typescript\n${zodSchemaCode}\n\`\`\`\n\n## Mapped Data Preview\n\n\`\`\`json\n${JSON.stringify(mappedData, null, 2)}\n\`\`\``,
+                            text: responseText,
                         },
                         {
                             type: 'resource' as const,

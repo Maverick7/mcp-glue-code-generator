@@ -6,12 +6,12 @@
     "url": "https://github.com/Maverick7/mcp-glue-code-generator",
     "source": "github"
   },
-  "version": "1.0.5",
+  "version": "1.0.6",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-glue-code-generator",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "transport": {
         "type": "stdio"
       }
