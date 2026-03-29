@@ -1,8 +1,8 @@
 {
     "name": "mcp-glue-code-generator",
-    "version": "1.0.6",
+    "version": "2.0.0",
     "mcpName": "io.github.Maverick7/glue-code-generator",
-    "description": "MCP Server that generates Zod schemas to map API responses to Vue/React Design System components with live UI previews",
+    "description": "MCP Server & CLI that auto-generates custom MCP servers for any organization's design system (Storybook). Discover components, live preview via Storybook iframe, and generate standalone MCP packages for Claude Desktop, VS Code, and any AI agent.",
     "type": "module",
     "main": "build/index.js",
     "bin": {
@@ -19,13 +19,19 @@
         "mcp-server",
         "model-context-protocol",
         "mcp-ui",
+        "storybook",
+        "design-system",
+        "component-library",
+        "claude-desktop",
+        "ai-agent",
+        "chatbot-plugin",
         "zod",
         "vue",
         "react",
-        "design-system",
         "api-mapping",
         "schema-generator",
-        "ai-tools"
+        "ai-tools",
+        "code-generator"
     ],
     "author": "",
     "license": "MIT",
